@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Our Class Global Issue Map</title>
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; display: flex; height: 100vh; overflow: hidden; background: #f8fafc; }
+    
+    /* 사이드바 스타일 */
+    #sidebar { width: 380px; height: 100%; background: #ffffff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; z-index: 1000; box-shadow: 4px 0 16px rgba(0,0,0,0.06); }
+    #map { flex: 1; height: 100%; }
+
+    .header { padding: 18px 20px; background: #0f172a; color: #fff; }
+    .header-title { display: flex; align-items: center; justify-content: space-between; }
+    .header h1 { font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .header p { font-size: 0.8rem; color: #94a3b8; margin-top: 4px; }
+    .badge-tag { background: #3b82f6; font-size: 0.7rem; padding: 2px 7px; border-radius: 999px; font-weight: 600; }
+
+    /* 검색창 */
+    .search-section { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+    .search-box { display: flex; gap: 8px; }
+    .search-box input { flex: 1; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; outline: none; transition: border-color 0.2s; }
+    .search-box input:focus { border-color: #2563eb; }
+    .search-box button { padding: 9px 15px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .search-box button:hover { background: #1d4ed8; }
+
+    /* 분야별 필터 칩 */
+    .filter-section { padding: 10px 16px; border-bottom: 1px solid #e2e8f0; background: #ffffff; }
+    .filter-title { font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 8px; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
+    .filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .filter-chip { font-size: 0.72rem; padding: 4px 9px; border-radius: 999px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; color: #475569; font-weight: 500; transition: all 0.2s; }
+    .filter-chip.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+
+    /* 입력 양식 및 카드 목록 */
+    .content-area { flex: 1; overflow-y: auto; padding: 16px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: #334155; margin-bottom: 5px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; outline: none; background: #fff; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #2563eb; }
+    .form-group textarea { height: 85px; resize: vertical; line-height: 1.4; }
+    .btn-submit { width: 100%; padding: 11px; background: #059669; color: #fff; border: none; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: background 0.2s; }
+    .btn-submit:hover { background: #047857; }
+
+    /* 카드 리스트 */
+    .list-header { font-size: 0.85rem; font-weight: 700; color: #475569; margin: 20px 0 10px; display: flex; justify-content: space-between; align-items: center; }
+    .issue-card { padding: 14px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; background: #fff; transition: box-shadow 0.2s, border-color 0.2s; }
+    .issue-card:hover { border-color: #94a3b8; box-shadow: 0 4px 10px rgba(0,0,0,0.04); }
+    .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .card-cat { display: inline-block; padding: 3px 8px; border-radius: 6px; font-weight: 600; font-size: 0.72rem; color: #fff; }
+    .card-del { color: #ef4444; border: none; background: none; cursor: pointer; font-size: 0.78rem; font-weight: 600; padding: 2px 4px; }
+    .card-del:hover { text-decoration: underline; }
+    .card-loc { font-size: 0.82rem; font-weight: 700; color: #1e293b; margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
+    .card-desc { font-size: 0.83rem; color: #475569; line-height: 1.45; word-break: break-word; }
+    .card-author { font-size: 0.75rem; color: #94a3b8; margin-top: 8px; border-top: 1px dashed #f1f5f9; padding-top: 6px; }
+
+    /* 지도 마커 커스텀 */
+    .custom-div-icon { background: none; border: none; }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <div class="header">
+      <div class="header-title">
+        <h1>🌐 Global Issue Map</h1>
+        <span class="badge-tag">Media & Fusion</span>
+      </div>
+      <p>Click anywhere on the map to register an issue pin</p>
+    </div>
+    
+    <!-- 국가/도시 검색 -->
+    <div class="search-section">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search country or city (e.g. Paris)..." onkeydown="if(event.key==='Enter') searchLocation()">
+        <button onclick="searchLocation()"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+      </div>
+    </div>
+
+    <!-- 분야별 필터 -->
+    <div class="filter-section">
+      <div class="filter-title">
+        <span>Category Filter</span>
+        <span id="activeFilterLabel" style="font-weight:normal; color:#94a3b8;">All</span>
+      </div>
+      <div class="filter-chips">
+        <button class="filter-chip active" onclick="setFilter('all', this)">All</button>
+        <button class="filter-chip" onclick="setFilter('환경·기후', this)">환경·기후</button>
+        <button class="filter-chip" onclick="setFilter('경제·산업', this)">경제·산업</button>
+        <button class="filter-chip" onclick="setFilter('사회·인권', this)">사회·인권</button>
+        <button class="filter-chip" onclick="setFilter('정치·외교', this)">정치·외교</button>
+        <button class="filter-chip" onclick="setFilter('과학·기술', this)">과학·기술</button>
+        <button class="filter-chip" onclick="setFilter('문화·교육', this)">문화·교육</button>
+        <button class="filter-chip" onclick="setFilter('미디어·언론', this)">미디어·언론</button>
+      </div>
+    </div>
+
+    <div class="content-area">
+      <!-- 이슈 등록 폼 -->
+      <form id="issueForm" onsubmit="handleSubmit(event)">
+        <div class="form-group">
+          <label>Student ID & Name (학번 및 이름)</label>
+          <input type="text" id="studentId" placeholder="예: 20900 ㅇㅇㅇ" required />
+        </div>
+        <div class="form-group">
+          <label>Country / City (나라 및 도시)</label>
+          <input type="text" id="locationInput" placeholder="Click map or type manually (e.g. Tokyo, Japan)" required />
+        </div>
+        <div class="form-group">
+          <label>Category (관심 분야)</label>
+          <select id="categorySelect" required>
+            <option value="환경·기후">🌱 환경·기후 (Environment & Climate)</option>
+            <option value="경제·산업">💰 경제·산업 (Economy & Industry)</option>
+            <option value="사회·인권">🤝 사회·인권 (Society & Human Rights)</option>
+            <option value="정치·외교">🏛️ 정치·외교 (Politics & Diplomacy)</option>
+            <option value="과학·기술">🚀 과학·기술 (Science & Tech)</option>
+            <option value="문화·교육">🎨 문화·교육 (Culture & Education)</option>
+            <option value="미디어·언론">📰 미디어·언론 (Media & Journalism)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Issue Description (국제 이슈 내용)</label>
+          <textarea id="issueDesc" placeholder="Describe the international issue..." required></textarea>
+        </div>
+        <input type="hidden" id="lat"><input type="hidden" id="lng">
+        <button type="submit" class="btn-submit"><i class="fa-solid fa-location-dot"></i> Add Pin to Map</button>
+      </form>
+
+      <!-- 등록된 핀 목록 -->
+      <div class="list-header">
+        <span>Registered Issues (<span id="issueCount">0</span>)</span>
+      </div>
+      <div id="issueList"></div>
+    </div>
+  </div>
+
+  <!-- 지도 영역 -->
+  <div id="map"></div>
+
+  <script>
+    const categoryColors = {
+      "환경·기후": "#10b981",
+      "경제·산업": "#f59e0b",
+      "사회·인권": "#ef4444",
+      "정치·외교": "#3b82f6",
+      "과학·기술": "#06b6d4",
+      "문화·교육": "#8b5cf6",
+      "미디어·언론": "#ec4899"
+    };
+
+    let allIssues = [];
+    let currentFilter = 'all';
+    let mapMarkers = [];
+    let boundaryLayer = null;
+
+    // 1. 영어 세계 지도 로드 (CartoDB Positron / OSM 영어 라벨)
+    const map = L.map('map').setView([25, 10], 3);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors © CARTO'
+    }).addTo(map);
+
+    // 2. 지도 클릭 시 영어 지명 자동 감지
+    map.on('click', async function(e) {
+      const { lat, lng } = e.latlng;
+      document.getElementById('lat').value = lat;
+      document.getElementById('lng').value = lng;
+
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en`);
+        const data = await res.json();
+        const city = data.address.city || data.address.town || data.address.state || '';
+        const country = data.address.country || '';
+        document.getElementById('locationInput').value = [city, country].filter(Boolean).join(', ') || `${lat.toFixed(2)}, ${lng.toFixed(2)}`;
+      } catch (err) {
+        document.getElementById('locationInput').value = `${lat.toFixed(2)}, ${lng.toFixed(2)}`;
+      }
+    });
+
+    // 3. 국가/도시 검색 & 빨간색 경계선(GeoJSON) 표시
+    async function searchLocation() {
+      const query = document.getElementById('searchInput').value.trim();
+      if (!query) return;
+
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&polygon_geojson=1&accept-language=en&q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        if (data && data.length > 0) {
+          const item = data[0];
+          map.setView([item.lat, item.lon], 6);
+
+          if (boundaryLayer) map.removeLayer(boundaryLayer);
+          if (item.geojson) {
+            boundaryLayer = L.geoJSON(item.geojson, {
+              style: { color: "#ef4444", weight: 3, opacity: 0.9, fillOpacity: 0.1 }
+            }).addTo(map);
+          }
+        } else {
+          alert('Location not found.');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // 4. 분야별 필터 설정
+    function setFilter(category, buttonEl) {
+      currentFilter = category;
+      document.querySelectorAll('.filter-chip').forEach(btn => btn.classList.remove('active'));
+      buttonEl.classList.add('active');
+      document.getElementById('activeFilterLabel').textContent = category === 'all' ? 'All' : category;
+      render();
+    }
+
+    // 5. Vercel KV 서버리스 API에서 데이터 불러오기 (GET)
+    async function loadIssues() {
+      try {
+        const res = await fetch('/api/issues');
+        if (res.ok) {
+          allIssues = await res.json();
+          render();
+        }
+      } catch (e) {
+        console.error('Failed to load issues:', e);
+      }
+    }
+
+    // 6. 새 핀 등록하기 (POST)
+    async function handleSubmit(e) {
+      e.preventDefault();
+      let lat = document.getElementById('lat').value;
+      let lng = document.getElementById('lng').value;
+      if (!lat || !lng) {
+        const center = map.getCenter();
+        lat = center.lat;
+        lng = center.lng;
+      }
+
+      const newIssue = {
+        id: Date.now().toString(),
+        studentId: document.getElementById('studentId').value.trim(),
+        location: document.getElementById('locationInput').value.trim(),
+        category: document.getElementById('categorySelect').value,
+        desc: document.getElementById('issueDesc').value.trim(),
+        lat: parseFloat(lat),
+        lng: parseFloat(lng)
+      };
+
+      try {
+        const res = await fetch('/api/issues', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newIssue)
+        });
+        if (res.ok) {
+          allIssues.unshift(newIssue);
+          render();
+          document.getElementById('issueDesc').value = '';
+          alert('새로운 이슈 핀이 등록되었습니다!');
+        } else {
+          alert('저장에 실패했습니다. 데이터베이스 연결을 확인해주세요.');
+        }
+      } catch (err) {
+        alert('서버 통신에 실패했습니다.');
+      }
+    }
+
+    // 7. 핀 삭제하기 (DELETE)
+    async function deleteIssue(id) {
+      if (!confirm('이 이슈 핀을 삭제하시겠습니까?')) return;
+      try {
+        const res = await fetch(`/api/issues?id=${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          allIssues = allIssues.filter(i => String(i.id) !== String(id));
+          render();
+        } else {
+          alert('삭제에 실패했습니다.');
+        }
+      } catch (e) {
+        alert('삭제 요청에 실패했습니다.');
+      }
+    }
+
+    // 8. 핀 및 리스트 렌더링
+    function render() {
+      mapMarkers.forEach(m => map.removeLayer(m));
+      mapMarkers = [];
+
+      const filtered = currentFilter === 'all' 
+        ? allIssues 
+        : allIssues.filter(i => i.category === currentFilter);
+
+      document.getElementById('issueCount').textContent = filtered.length;
+      const listContainer = document.getElementById('issueList');
+      listContainer.innerHTML = '';
+
+      filtered.forEach(item => {
+        const color = categoryColors[item.category] || '#2563eb';
+
+        // 지도 핀 (동그란 컬러 서클 마커)
+        const marker = L.circleMarker([item.lat, item.lng], {
+          radius: 9,
+          fillColor: color,
+          color: '#ffffff',
+          weight: 2.5,
+          opacity: 1,
+          fillOpacity: 0.95
+        }).addTo(map);
+
+        marker.bindPopup(`
+          <div style="min-width: 170px; padding: 4px;">
+            <div style="font-weight: 700; color: ${color}; font-size: 0.85rem;">${item.category}</div>
+            <div style="font-size: 0.8rem; color: #1e293b; font-weight: 600; margin: 3px 0;"><i class="fa-solid fa-location-dot"></i> ${item.location}</div>
+            <p style="font-size: 0.82rem; color: #334155; margin: 6px 0; line-height: 1.4;">${item.desc}</p>
+            <div style="font-size: 0.75rem; color: #94a3b8; display:flex; justify-content:space-between; align-items:center;">
+              <span>By: ${item.studentId}</span>
+              <button onclick="deleteIssue('${item.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer; font-weight:600;">Delete</button>
+            </div>
+          </div>
+        `);
+        mapMarkers.push(marker);
+
+        // 사이드바 카드
+        const card = document.createElement('div');
+        card.className = 'issue-card';
+        card.innerHTML = `
+          <div class="card-top">
+            <span class="card-cat" style="background:${color}">${item.category}</span>
+            <button class="card-del" onclick="deleteIssue('${item.id}')"><i class="fa-solid fa-trash-can"></i> Delete</button>
+          </div>
+          <div class="card-loc"><i class="fa-solid fa-location-dot" style="color:${color}"></i> ${item.location}</div>
+          <div class="card-desc">${item.desc}</div>
+          <div class="card-author">작성자: <b>${item.studentId}</b></div>
+        `;
+        listContainer.appendChild(card);
+      });
+    }
+
+    loadIssues();
+  </script>
+</body>
+</html>
