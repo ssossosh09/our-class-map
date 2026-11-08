@@ -1,7 +1,9 @@
 {
-  "name": "class-issue-map",
+  "name": "our-class-world-issue-map",
   "version": "1.0.0",
+  "private": true,
   "dependencies": {
+    "@upstash/redis": "^1.34.3",
     "@vercel/kv": "^3.0.0"
   }
 }
