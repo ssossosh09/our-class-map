@@ -300,9 +300,15 @@
       });
 
       // 무료 영문 오픈스트리트맵 타일 (API 키 요구 없음)
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
+      //L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      //  maxZoom: 19,
+      //  attribution: '© OpenStreetMap contributors'
+      //}).addTo(map);
+
+      // 전 세계 국가 및 도시명이 영어(English)로 표기되는 글로벌 타일 레이어
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri',
+        maxZoom: 18
       }).addTo(map);
 
       L.control.zoom({ position: 'bottomright' }).addTo(map);
