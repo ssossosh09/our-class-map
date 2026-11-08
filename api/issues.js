@@ -1,32 +1,45 @@
-import { Redis } from '@upstash/redis';
+const { Redis } = require('@upstash/redis');
 
-// KV 또는 UPSTASH 환경 변수를 둘 다 자동 감지하도록 설정
-const redis = new Redis({
-  url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN,
-});
+// 환경변수 자동 감지
+const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+const redisToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 
-export default async function handler(req, res) {
-  // CORS 및 헤더 설정
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+let redis = null;
+if (redisUrl && redisToken) {
+  redis = new Redis({
+    url: redisUrl,
+    token: redisToken,
+  });
+}
+
+module.exports = async (req, res) => {
+  // CORS 헤더 설정
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST,DELETE');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
+  // Redis 환경변수가 없을 경우 에러 메시지 반환
+  if (!redis) {
+    return res.status(500).json({ 
+      error: 'Environment variables missing',
+      detail: 'KV_REST_API_URL or KV_REST_API_TOKEN is missing in Vercel Settings' 
+    });
+  }
+
   const STORAGE_KEY = 'class_world_issues_data';
 
   try {
-    // 1. 데이터 조회 (GET)
+    // 1. 목록 조회 (GET)
     if (req.method === 'GET') {
       const data = await redis.get(STORAGE_KEY);
       return res.status(200).json(data || []);
     }
 
-    // 2. 새 핀 추가 (POST)
+    // 2. 핀 등록 (POST)
     if (req.method === 'POST') {
       const newIssue = req.body;
       const currentList = (await redis.get(STORAGE_KEY)) || [];
@@ -45,8 +58,7 @@ export default async function handler(req, res) {
     }
 
     return res.status(405).json({ error: 'Method Not Allowed' });
-  } catch (error) {
-    console.error('Database connection error:', error);
-    return res.status(500).json({ error: error.message || 'Server DB Error' });
+  } catch (err) {
+    return res.status(500).json({ error: 'Database Error', message: err.message });
   }
-}
+};
