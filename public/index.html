@@ -299,10 +299,10 @@
         zoomControl: false
       });
 
-      // 영어 지도 레이어 (OpenStreetMap CartoDB Positron)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '© OpenStreetMap contributors © CARTO',
-        maxZoom: 19
+      // 무료 영문 오픈스트리트맵 타일 (API 키 요구 없음)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
       }).addTo(map);
 
       L.control.zoom({ position: 'bottomright' }).addTo(map);
